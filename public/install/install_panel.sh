@@ -16,7 +16,7 @@ if [ -f "$INSTALL_LOGFILE" ];then
 fi
 exec > >(tee -a "$INSTALL_LOGFILE") 2>&1 
 
-Btapi_Url='https://YOUR_DOMAIN.vercel.app'
+Btapi_Url='https://bt5.cnam.ccwu.cc'
 # Check_Api=$(curl -Ss --connect-timeout 5 -m 2 $Btapi_Url/api/SetupCount)
 # if [ "$Check_Api" != 'ok' ];then
 # 	Red_Error "姝ゅ疂濉旂涓夋柟浜戠鏃犳硶杩炴帴锛屽洜姝ゅ畨瑁呰繃绋嬪凡涓锛?;
