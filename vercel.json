@@ -27,8 +27,8 @@
       "destination": "https://apibt5.662123.xyz/install/update/:path*"
     },
     {
-      "source": "/win/panel/:path*.zip",
-      "destination": "https://apibt5.662123.xyz/win/panel/:path*.zip"
+      "source": "/win/panel/:path*",
+      "destination": "https://apibt5.662123.xyz/win/panel/:path*"
     }
   ]
 }
