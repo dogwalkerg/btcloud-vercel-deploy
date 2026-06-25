@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>宝塔面板安装脚本</title>
+<link href="/static/css/bootstrap-3.4.1.min.css" rel="stylesheet">
+<style>
+body{background:#f5f7fa}
+.hero{background:linear-gradient(135deg,#4387fd,#2b6ee8);color:#fff;padding:50px 0;text-align:center}
+.hero h1{font-size:32px;margin:0 0 10px}
+.hero p{font-size:16px;opacity:.9;margin:0}
+.card{background:#fff;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.08);margin-bottom:20px;overflow:hidden}
+.card-hd{background:#fafbfc;border-bottom:1px solid #eee;padding:15px 20px;font-size:16px;font-weight:700}
+.card-bd{padding:20px}
+.code-box{background:#1e1e1e;color:#fff;padding:15px;border-radius:6px;font-family:monospace;font-size:14px;overflow-x:auto;margin-bottom:15px;position:relative}
+.code-box .cmd{white-space:nowrap}
+.lb{display:inline-block;background:#e8ecf1;color:#555;padding:2px 10px;border-radius:4px;font-size:13px;margin-bottom:8px}
+.tip{color:orangered;font-weight:700}
+</style>
+</head>
+<body>
+<div class="hero"><h1>宝塔面板安装脚本</h1><p>2分钟装好面板，一键管理服务器</p></div>
+<div class="container" style="padding-top:30px;padding-bottom:40px">
+<!-- Linux -->
+<div class="card"><div class="card-hd">Linux面板 11.8.0</div><div class="card-bd"><p>使用SSH连接服务器后执行：</p>
+<div class="code-box"><span class="lb">CentOS</span><div class="cmd">yum install -y wget && wget -O install.sh https://YOUR_DOMAIN.vercel.app/install/install_panel.sh && sh install.sh</div></div>
+<div class="code-box"><span class="lb">Ubuntu/Debian</span><div class="cmd">wget -O install.sh https://YOUR_DOMAIN.vercel.app/install/install_panel.sh && bash install.sh</div></div>
+<div class="code-box"><span class="lb">一键更新</span><div class="cmd">curl https://YOUR_DOMAIN.vercel.app/install/update6.sh|bash</div></div>
+<p class="tip">注意：必须为没装过其它环境的新系统</p></div></div>
+<!-- Win -->
+<div class="card"><div class="card-hd">Windows面板 8.5.2</div><div class="card-bd"><p>1、使用官方安装程序安装，安装完先不要进入面板。</p><p>2、在cmd执行以下命令：</p><div class="code-box"><div class="cmd">wget https://YOUR_DOMAIN.vercel.app/win/install/panel_update.py -O C:/update.py && "C:\Program Files\python\python.exe" C:/update.py 8.5.2</div></div><p>3、打开面板后绑定账号时输入任意账号密码即可。</p></div></div>
+<!-- aaPanel -->
+<div class="card"><div class="card-hd">aaPanel 7.0.25</div><div class="card-bd">
+<div class="code-box"><span class="lb">Install</span><div class="cmd">URL=https://YOUR_DOMAIN.vercel.app/install/install_7.0_en.sh && if [ -f /usr/bin/curl ];then curl -ksSO $URL ;else wget -O install_7.0_en.sh $URL;fi;bash install_7.0_en.sh</div></div>
+<div class="code-box"><span class="lb">Upgrade</span><div class="cmd">curl https://YOUR_DOMAIN.vercel.app/install/update_7.x_en.sh|bash</div></div></div></div>
+<!-- Monitor -->
+<div class="card"><div class="card-hd">云安全监控 2.3.3</div><div class="card-bd">
+<div class="code-box"><span class="lb">安装</span><div class="cmd">curl -sS https://YOUR_DOMAIN.vercel.app/install/install_btmonitor.sh -o /tmp/install_btmonitor.sh && bash /tmp/install_btmonitor.sh</div></div>
+<div class="code-box"><span class="lb">更新</span><div class="cmd">curl https://YOUR_DOMAIN.vercel.app/install/update_btmonitor.sh|bash</div></div></div></div>
+</div>
+</body>
+</html>
