@@ -5,8 +5,8 @@ LANG=en_US.UTF-8
 
 MAC_OS_CHECK=$(uname -a|grep Darwin)
 if [ "${MAC_OS_CHECK}" ];then
-    echo "褰撳墠绯荤粺涓簃acOS锛屾棤娉曞畨瑁呭疂濉旈潰鏉匡紝璇蜂娇鐢↙inux绯荤粺(鏈嶅姟鍣ㄧ増鏈Debian/Centos)瀹夎瀹濆闈㈡澘"
-	echo "鎴栦娇鐢―ocker瀹夎瀹濆闈㈡澘"
+    echo "当前系统为macOS，无法安装宝塔面板，请使用Linux系统(服务器版本如Debian/Centos)安装宝塔面板"
+	echo "或使用Docker安装宝塔面板"
     exit 1
 fi
 
@@ -19,11 +19,11 @@ exec > >(tee -a "$INSTALL_LOGFILE") 2>&1
 Btapi_Url='https://bt5.cnam.ccwu.cc'
 # Check_Api=$(curl -Ss --connect-timeout 5 -m 2 $Btapi_Url/api/SetupCount)
 # if [ "$Check_Api" != 'ok' ];then
-# 	Red_Error "姝ゅ疂濉旂涓夋柟浜戠鏃犳硶杩炴帴锛屽洜姝ゅ畨瑁呰繃绋嬪凡涓锛?;
+#	Red_Error "此宝塔第三方云端无法连接，因此安装过程已中止！";
 # fi
 
 if [ $(whoami) != "root" ];then
-	echo "璇蜂娇鐢╮oot鏉冮檺鎵ц瀹濆瀹夎鍛戒护锛?
+	echo "请使用root权限执行宝塔安装命令！"
 	exit 1;
 fi
 
@@ -32,9 +32,9 @@ if [ "${MEM_TOTAL}" ] ;then
 	if [ "${MEM_TOTAL}" -lt "450" ];then
 		echo "====================================================="
 		free -m
-		echo "褰撳墠鏈嶅姟鍣ㄥ唴瀛樹负:${MEM_TOTAL}MB"
-		echo "妫€娴嬪埌褰撳墠鏈嶅姟鍣ㄥ唴瀛樺皬浜?50MB锛屾棤娉曞畨瑁呭疂濉旈潰鏉?
-		echo "寤鸿鏇存崲鍐呭瓨澶т簬绛変簬512MB鐨勬湇鍔″櫒瀹夎瀹濆闈㈡澘"
+		echo "当前服务器内存为:${MEM_TOTAL}MB"
+		echo "检测到当前服务器内存小于450MB，无法安装宝塔面板"
+		echo "建议更换内存大于等于512MB的服务器安装宝塔面板"
 		echo "====================================================="
 		exit 1
 	fi
@@ -43,17 +43,17 @@ fi
 Fix_Apt_Lock(){
     [ ! -f "/usr/bin/apt-get" ] && return 0
     
-    echo "妫€鏌?apt/dpkg 閿佺姸鎬?.."
+    echo "检查 apt/dpkg 锁状态..."
     
-    # # 1. 鍋滄鑷姩鏇存柊鏈嶅姟
+    # # 1. 停止自动更新服务
     # if systemctl is-active --quiet unattended-upgrades 2>/dev/null; then
-    #     echo "鍋滄 unattended-upgrades 鏈嶅姟..."
+    #     echo "停止 unattended-upgrades 服务..."
     #     systemctl stop unattended-upgrades 2>/dev/null
     #     systemctl disable unattended-upgrades 2>/dev/null
     #     sleep 2
     # fi
     
-    # 2. 绛夊緟鍏朵粬 apt/dpkg 杩涚▼锛堟渶澶氱瓑寰?0绉掞級
+    # 2. 等待其他 apt/dpkg 进程（最多等待60秒）
     local wait=0
     while fuser /var/lib/dpkg/lock >/dev/null 2>&1 || \
           fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || \
@@ -61,7 +61,7 @@ Fix_Apt_Lock(){
           fuser /var/cache/apt/archives/lock >/dev/null 2>&1; do
         
         if [ ${wait} -eq 0 ]; then
-            echo "妫€娴嬪埌 apt/dpkg 姝ｅ湪浣跨敤涓紝绛夊緟瀹屾垚..."
+            echo "检测到 apt/dpkg 正在使用中，等待完成..."
             ps aux | grep -E 'apt-get|apt |dpkg|unattended' | grep -v grep | awk '{print "  PID "$2": "$11}' || true
         fi
         
@@ -70,33 +70,34 @@ Fix_Apt_Lock(){
         wait=$((wait + 3))
     done
     
-    # 3. 濡傛灉杩樻湁閿侊紝寮哄埗娓呯悊
+    # 3. 如果还有锁，强制清理
     if fuser /var/lib/dpkg/lock >/dev/null 2>&1 || \
        fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || \
        fuser /var/lib/apt/lists/lock >/dev/null 2>&1 || \
        fuser /var/cache/apt/archives/lock >/dev/null 2>&1; then
         
-        echo "寮哄埗娓呯悊 apt/dpkg 閿?.."
+        echo "强制清理 apt/dpkg 锁..."
         
-        # 寮哄埗缁堟杩涚▼
+        # 强制终止进程
         pkill -9 unattended-upgr 2>/dev/null
         pkill -9 apt-get 2>/dev/null
         pkill -9 apt 2>/dev/null
         pkill -9 dpkg 2>/dev/null
         sleep 1
         
-        # 鍒犻櫎鎵€鏈夐攣鏂囦欢
+        # 删除所有锁文件
         rm -f /var/lib/dpkg/lock-frontend
         rm -f /var/lib/dpkg/lock
         rm -f /var/lib/apt/lists/lock
         rm -f /var/cache/apt/archives/lock
         
-        # 淇 dpkg 鐘舵€?        echo "淇 dpkg 鐘舵€?.."
+        # 修复 dpkg 状态
+        echo "修复 dpkg 状态..."
         dpkg --configure -a 2>/dev/null || true
         apt-get install -f -y 2>/dev/null || true
     fi
     
-    echo "apt/dpkg 閿佹鏌ュ畬鎴?
+    echo "apt/dpkg 锁检查完成"
     return 0
 }
 
@@ -105,39 +106,39 @@ Fix_Apt_Lock(){
 
 is64bit=$(getconf LONG_BIT)
 if [ "${is64bit}" != '64' ];then
-	echo "鎶辨瓑, 褰撳墠闈㈡澘鐗堟湰涓嶆敮鎸?2浣嶇郴缁? 璇蜂娇鐢?4浣嶇郴缁熸垨瀹夎瀹濆5.9!";
+	echo "抱歉, 当前面板版本不支持32位系统, 请使用64位系统或安装宝塔5.9!";
 	exit 1
 fi
 
 Centos6Check=$(cat /etc/redhat-release | grep ' 6.' | grep -iE 'centos|Red Hat')
 if [ "${Centos6Check}" ];then
-	echo "Centos6涓嶆敮鎸佸畨瑁呭疂濉旈潰鏉匡紝璇锋洿鎹entos7/8瀹夎瀹濆闈㈡澘"
+	echo "Centos6不支持安装宝塔面板，请更换Centos7/8安装宝塔面板"
 	exit 1
 fi 
 
 UbuntuCheck=$(cat /etc/issue|grep Ubuntu|awk '{print $2}'|cut -f 1 -d '.')
 if [ "${UbuntuCheck}" ] && [ "${UbuntuCheck}" -lt "16" ];then
-	echo "Ubuntu ${UbuntuCheck}涓嶆敮鎸佸畨瑁呭疂濉旈潰鏉匡紝寤鸿鏇存崲Ubuntu18/20瀹夎瀹濆闈㈡澘"
+	echo "Ubuntu ${UbuntuCheck}不支持安装宝塔面板，建议更换Ubuntu18/20安装宝塔面板"
 	exit 1
 fi
 HOSTNAME_CHECK=$(cat /etc/hostname)
 if [ -z "${HOSTNAME_CHECK}" ];then
 	echo "localhost" > /etc/hostname
-	# echo "褰撳墠涓绘満鍚峢ostname涓虹┖鏃犳硶瀹夎瀹濆闈㈡澘锛岃鍜ㄨ鏈嶅姟鍣ㄨ繍钀ュ晢璁剧疆濂絟ostname鍚庡啀閲嶆柊瀹夎"
+	# echo "当前主机名hostname为空无法安装宝塔面板，请咨询服务器运营商设置好hostname后再重新安装"
 	# exit 1
 fi
 
 UBUNTU_NO_LTS=$(cat /etc/issue|grep Ubuntu|grep -E "19|21|23|25")
 if [ "${UBUNTU_NO_LTS}" ];then
-	echo "褰撳墠鎮ㄤ娇鐢ㄧ殑闈濽buntu-lts鐗堟湰锛屾棤娉曡繘琛屽疂濉旈潰鏉跨殑瀹夎"
-	echo "璇蜂娇鐢║buntu-20/20/22/24杩涜瀹夎瀹濆闈㈡澘"
+	echo "当前您使用的非Ubuntu-lts版本，无法进行宝塔面板的安装"
+	echo "请使用Ubuntu-20/20/22/24进行安装宝塔面板"
 	exit 1
 fi
 
 DEBIAN_9_C=$(cat /etc/issue|grep Debian|grep -E "7 |8 |9 ")
 if [ "${DEBIAN_9_C}" ];then
-	echo "褰撳墠鎮ㄤ娇鐢ㄧ殑Debian-7/8/9锛屽畼鏂瑰凡缁忓仠姝㈡敮鎸併€佹棤娉曡繘琛屽疂濉旈潰鏉跨殑瀹夎"
-	echo "寤鸿浣跨敤Debian-11/12/13杩涜瀹夎瀹濆闈㈡澘"
+	echo "当前您使用的Debian-7/8/9，官方已经停止支持、无法进行宝塔面板的安装"
+	echo "建议使用Debian-11/12/13进行安装宝塔面板"
 	exit 1
 fi
 
@@ -150,10 +151,15 @@ panelPort=$(expr $RANDOM % 55535 + 10000)
 # 	IDC_CODE=$1
 # fi
 
-#2026-03-14鏂板涓嬭浇鍏辩敤鍑芥暟
+#2026-03-14新增下载共用函数
 Download_File(){
-	# 鍙傛暟1锛氫富涓嬭浇鍩熷悕锛堝http://download.bt.cn锛?	# 鍙傛暟2锛氬鐢ㄤ笅杞藉煙鍚嶏紙濡俬ttp://download.bt.com锛?	# 鍙傛暟3锛氭枃浠惰矾寰勶紙濡?src/file.tar.gz锛?	# 鍙傛暟4锛氫繚瀛樿矾寰勶紙濡?tmp/file.tar.gz锛?	# 绀轰緥璋冪敤锛欴ownload_File "http://download.bt.cn" "http://download.bt.com" "/src/file.tar.gz" "/tmp/file.tar.gz"
-	# 鏅鸿兘涓嬭浇鍑芥暟锛屾敮鎸乧url鍜寃get锛岃嚜鍔ㄩ噸璇曪紝楠岃瘉鏂囦欢澶у皬锛岀‘淇濅笅杞芥垚鍔?    local primary_domain=$1
+	# 参数1：主下载域名（如http://download.bt.cn）
+	# 参数2：备用下载域名（如http://download.bt.com）
+	# 参数3：文件路径（如/src/file.tar.gz）
+	# 参数4：保存路径（如/tmp/file.tar.gz）
+	# 示例调用：Download_File "http://download.bt.cn" "http://download.bt.com" "/src/file.tar.gz" "/tmp/file.tar.gz"
+	# 智能下载函数，支持curl和wget，自动重试，验证文件大小，确保下载成功
+    local primary_domain=$1
     local backup_domain=$2
     local file_path=$3
     local save_path=$4
@@ -167,7 +173,7 @@ Download_File(){
     local current_url=""
     
 	
-    echo "姝ｅ湪涓嬭浇: $(basename ${save_path})"
+    echo "正在下载: $(basename ${save_path})"
     
     while [ ${retry_count} -lt ${max_retry} ]; do
         if [ -f "${save_path}" ]; then
@@ -176,10 +182,10 @@ Download_File(){
         
         if [ ${retry_count} -eq 0 ]; then
             current_url="${primary_domain}${file_path}"
-            #echo "浣跨敤涓讳笅杞借妭鐐? ${primary_domain}"
+            #echo "使用主下载节点: ${primary_domain}"
         else
             current_url="${backup_domain}${file_path}"
-            #echo "鍒囨崲鍒板鐢ㄤ笅杞借妭鐐? ${backup_domain}"
+            #echo "切换到备用下载节点: ${backup_domain}"
         fi
         
         if command -v curl >/dev/null 2>&1; then
@@ -201,21 +207,21 @@ Download_File(){
                 fi
             fi
         else
-            echo "閿欒: 鏈壘鍒癱url鎴杦get涓嬭浇宸ュ叿"
+            echo "错误: 未找到curl或wget下载工具"
             return 1
         fi
         
         retry_count=$((retry_count + 1))
         if [ ${retry_count} -lt ${max_retry} ]; then
-            echo "涓嬭浇澶辫触锛?{retry_count}/${max_retry} 娆￠噸璇曚腑..."
+            echo "下载失败，${retry_count}/${max_retry} 次重试中..."
             sleep 2
         fi
     done
     
     if [ ${download_success} -eq 0 ]; then
-        echo "閿欒: 涓嬭浇澶辫触锛屽凡閲嶈瘯 ${max_retry} 娆?
-        #echo "涓昏妭鐐? ${primary_domain}${file_path}"
-        #echo "澶囩敤鑺傜偣: ${backup_domain}${file_path}"
+        echo "错误: 下载失败，已重试 ${max_retry} 次"
+        #echo "主节点: ${primary_domain}${file_path}"
+        #echo "备用节点: ${backup_domain}${file_path}"
         return 1
     fi
 
@@ -224,7 +230,7 @@ Download_File(){
 		download_Url=${backup_domain}
 	fi
     
-    #echo "涓嬭浇鎴愬姛: $(basename ${save_path})"
+    #echo "下载成功: $(basename ${save_path})"
     return 0
 }
 
@@ -234,13 +240,13 @@ Ready_Check(){
  
    if [ "${ROOT_DISK_SPACE}" -le 412000 ];then
 	df -h
-        echo -e "绯荤粺鐩樺墿浣欑┖闂翠笉瓒?00M 鏃犳硶缁х画瀹夎瀹濆闈㈡澘锛?
-        echo -e "璇峰皾璇曟竻鐞嗙鐩樼┖闂村悗鍐嶉噸鏂拌繘琛屽畨瑁?
+        echo -e "系统盘剩余空间不足400M 无法继续安装宝塔面板！"
+        echo -e "请尝试清理磁盘空间后再重新进行安装"
         exit 1
     fi
     if [ "${WWW_DISK_SPACE}" ] && [ "${WWW_DISK_SPACE}" -le 412000 ] ;then
-        echo -e "/www鐩樺墿浣欑┖闂翠笉瓒?00M 鏃犳硶缁х画瀹夎瀹濆闈㈡澘锛?
-        echo -e "璇峰皾璇曟竻鐞嗙鐩樼┖闂村悗鍐嶉噸鏂拌繘琛屽畨瑁?
+        echo -e "/www盘剩余空间不足400M 无法继续安装宝塔面板！"
+        echo -e "请尝试清理磁盘空间后再重新进行安装"
         exit 1
     fi
 
@@ -248,8 +254,8 @@ Ready_Check(){
 	# if [ "${ROOT_DISK_INODE}" != "0" ];then
 	# 	ROOT_DISK_INODE_FREE=$(df -i|grep /$|awk '{print $4}')
 	# 	if [ "${ROOT_DISK_INODE_FREE}" -le 1000 ];then
-	# 		echo -e "绯荤粺鐩樺墿浣檌nodes绌洪棿涓嶈冻1000,鏃犳硶缁х画瀹夎锛?
-	# 		echo -e "璇峰皾璇曟竻鐞嗙鐩樼┖闂村悗鍐嶉噸鏂拌繘琛屽畨瑁?
+	# 		echo -e "系统盘剩余inodes空间不足1000,无法继续安装！"
+	# 		echo -e "请尝试清理磁盘空间后再重新进行安装"
 	# 		exit 1
 	# 	fi
 	# fi
@@ -258,8 +264,8 @@ Ready_Check(){
 	# if [ "${WWW_DISK_INODE}" ] && [ "${WWW_DISK_INODE}" != "0" ] ;then
 	# 	WWW_DISK_INODE_FREE=$(df -i|grep /www|awk '{print $4}')
 	# 	if [ "${WWW_DISK_INODE_FREE}" ] && [ "${WWW_DISK_INODE_FREE}" -le 1000 ] ;then
-	# 		echo -e "/www鐩樺墿浣檌nodes绌洪棿涓嶈冻1000, 鏃犳硶缁х画瀹夎锛?
-	# 		echo -e "璇峰皾璇曟竻鐞嗙鐩樼┖闂村悗鍐嶉噸鏂拌繘琛屽畨瑁?
+	# 		echo -e "/www盘剩余inodes空间不足1000, 无法继续安装！"
+	# 		echo -e "请尝试清理磁盘空间后再重新进行安装"
 	# 		exit 1
 	# 	fi
 	# fi
@@ -287,27 +293,28 @@ GetSysInfo(){
 	echo -e Bit:${SYS_BIT} Mem:${MEM_TOTAL}M Core:${CPU_INFO}
 	echo -e ${SYS_INFO}
 	echo -e "============================================"
-	echo -e "璇锋埅鍥句互涓婃姤閿欎俊鎭彂甯栬嚦璁哄潧www.bt.cn/bbs姹傚姪"
+	echo -e "请截图以上报错信息发帖至论坛www.bt.cn/bbs求助"
 	echo -e "============================================"
 	
 	if [ -f "/etc/redhat-release" ];then
 		Centos7Check=$(cat /etc/redhat-release | grep ' 7.' | grep -iE 'centos')
 		echo -e "============================================"
-		echo -e "Centos7/8瀹樻柟宸茬粡鍋滄鏀寔"
-		echo -e "濡傛槸鏂板畨瑁呯郴缁熸湇鍔″櫒寤鸿鏇存崲鑷矰ebian-12/Ubuntu-22/Centos-9绯荤粺瀹夎瀹濆闈㈡澘"
+		echo -e "Centos7/8官方已经停止支持"
+		echo -e "如是新安装系统服务器建议更换至Debian-12/Ubuntu-22/Centos-9系统安装宝塔面板"
 		echo -e "============================================"
 	fi
 
 	
 	if [ -f "/usr/sbin/setstatus" ] || [ -f "/usr/sbin/setstatus" ];then
 		echo -e "=================================================="
-		echo -e "  妫€娴嬪埌涓洪簰楹熺郴缁燂紝鍙兘榛樿寮€鍚畨鍏ㄥ姛鑳藉鑷村畨瑁呭け璐?
-		echo -e "  璇锋墽琛屼互涓嬪懡浠ゅ叧闂畨鍏ㄥ姞鍥哄悗锛屽啀閲嶆柊瀹夎瀹濆闈㈡澘鐪嬫槸鍚︽甯?
-		echo -e "  鍛戒护锛歴udo setstatus softmode -p"
+		echo -e "  检测到为麒麟系统，可能默认开启安全功能导致安装失败"
+		echo -e "  请执行以下命令关闭安全加固后，再重新安装宝塔面板看是否正常"
+		echo -e "  命令：sudo setstatus softmode -p"
 		echo -e "=================================================="
 	fi  
 
-	#2026-3-14鏂板甯哥敤鍛戒护妫€娴?	CORE_TOOLS="wget tar xz unzip"
+	#2026-3-14新增常用命令检测
+	CORE_TOOLS="wget tar xz unzip"
 	NO_EXIST_TOOL=""
 
 	for tool in $CORE_TOOLS; do
@@ -332,31 +339,31 @@ GetSysInfo(){
 	if [ -n "$NO_EXIST_TOOL" ]; then
 		NO_EXIST_TOOL="${NO_EXIST_TOOL# }"
 		echo "========================================================"
-		echo "  妫€娴嬪埌缂哄皯蹇呰鐨勭郴缁熷伐鍏? $NO_EXIST_TOOL"
-		echo "  瀹濆闈㈡澘瀹夎杩囩▼涓細灏濊瘯淇绯荤粺婧愬苟瀹夎杩欎簺宸ュ叿锛?
-		echo "  浣嗘湰娆″畨瑁呮湭鑳芥垚鍔燂紝鍙兘鏄敱浜庣郴缁熸簮鎴栫綉缁滈棶棰樺鑷淬€?
-		echo "  寤鸿鎮ㄥ厛鑷鎺掓煡鎴栦娇鐢?AI 鍗忓姪瑙ｅ喅闂鍚庯紝鍐嶉噸鏂板畨瑁呭疂濉旈潰鏉裤€?
-		echo "  璇锋敞鎰忥細鎵ц涓嬮潰鍛戒护鏃朵骇鐢熺殑鎶ラ敊淇℃伅鏄帓鏌ラ棶棰樼殑鍏抽敭淇℃伅锛?
-		echo "  璇锋牴鎹姤閿欎俊鎭繘琛屽鐞嗗悗鍐嶅皾璇曞畨瑁呫€?
-		echo "  鎮ㄥ彲浠ヤ娇鐢ㄤ互涓嬪懡浠ゆ墜鍔ㄥ畨瑁呯己灏戠殑宸ュ叿锛?
+		echo "  检测到缺少必要的系统工具: $NO_EXIST_TOOL"
+		echo "  宝塔面板安装过程中会尝试修复系统源并安装这些工具，"
+		echo "  但本次安装未能成功，可能是由于系统源或网络问题导致。"
+		echo "  建议您先自行排查或使用 AI 协助解决问题后，再重新安装宝塔面板。"
+		echo "  请注意：执行下面命令时产生的报错信息是排查问题的关键信息，"
+		echo "  请根据报错信息进行处理后再尝试安装。"
+		echo "  您可以使用以下命令手动安装缺少的工具："
 		if [ -f "/usr/bin/yum" ]; then
-			echo "  瀹夎鍛戒护: yum install $NO_EXIST_TOOL -y"
+			echo "  安装命令: yum install $NO_EXIST_TOOL -y"
 		elif [ -f "/usr/bin/apt-get" ]; then
-			echo "  瀹夎鍛戒护: apt-get install $NO_EXIST_TOOL -y"
+			echo "  安装命令: apt-get install $NO_EXIST_TOOL -y"
 		else
-			echo "  绯荤粺鏈瘑鍒紝璇锋墜鍔ㄥ畨瑁呬笂杩板伐鍏?
+			echo "  系统未识别，请手动安装上述工具"
 		fi
 		echo "========================================================"
 	fi
 
 	SYS_SSL_LIBS=$(pkg-config --list-all | grep -q libssl)
 	if [ -z "$SYS_SSL_LIBS" ] && [ -z "$NO_EXIST_TOOL" ];then
-		echo "妫€娴嬪埌缂哄皯绯荤粺ssl鐩稿叧渚濊禆锛屽彲鎵ц涓嬮潰鍛戒护瀹夎渚濊禆鍚庡啀閲嶆柊瀹夎瀹濆鐪嬫槸鍚︽甯?
-		echo "鎵ц鍓嶈纭繚绯荤粺婧愭甯?
+		echo "检测到缺少系统ssl相关依赖，可执行下面命令安装依赖后再重新安装宝塔看是否正常"
+		echo "执行前请确保系统源正常"
 		if [ -f "/usr/bin/yum" ];then
-			echo "瀹夎渚濊禆鍛戒护: yum install openssl-devel -y"
+			echo "安装依赖命令: yum install openssl-devel -y"
 		elif [ -f "/usr/bin/apt-get" ];then
-			echo "瀹夎渚濊禆鍛戒护: apt-get install libssl-dev -y"
+			echo "安装依赖命令: apt-get install libssl-dev -y"
 		fi
 		rm -rf /www/server/panel/pyenv 
 		echo -e "=================================================="
@@ -382,14 +389,14 @@ Install_Check(){
 		return
 	fi
 	echo -e "----------------------------------------------------"
-	echo -e "妫€鏌ュ凡鏈夊叾浠朩eb/mysql鐜锛屽畨瑁呭疂濉斿彲鑳藉奖鍝嶇幇鏈夌珯鐐瑰強鏁版嵁"
+	echo -e "检查已有其他Web/mysql环境，安装宝塔可能影响现有站点及数据"
 	echo -e "Web/mysql service is alreday installed,Can't install panel"
 	echo -e "----------------------------------------------------"
-	echo -e "宸茬煡椋庨櫓/Enter yes to force installation"
-	read -p "杈撳叆yes寮哄埗瀹夎: " yes;
+	echo -e "已知风险/Enter yes to force installation"
+	read -p "输入yes强制安装: " yes;
 	if [ "$yes" != "yes" ];then
 		echo -e "------------"
-		echo "鍙栨秷瀹夎"
+		echo "取消安装"
 		exit;
 	fi
 	INSTALL_FORCE="true"
@@ -452,20 +459,23 @@ Get_Pack_Manager(){
 	fi
 }
 Check_And_Fix_Debian_Ubuntu_Source(){
-	#2026-3-12鏃ユ洿鏂?	# 浣滅敤锛氭鏌ebian/Ubuntu绯荤粺婧愰厤缃紝鑷姩鏇挎崲杩囨棫鐨勭増鏈唬鍙蜂负褰撳墠绯荤粺鐗堟湰鐨勬纭唬鍙凤紝淇濇寔杈冩柊鐗堟湰浠ｅ彿涓嶅彉锛岄伩鍏嶅紩鍏ヤ笉鍏煎鐨勮蒋浠跺寘
-	# 鍦烘櫙锛氱敤鎴风郴缁熷崌绾у悗锛宻ources.list涓粛鐒朵繚鐣欎簡鏃х増鏈殑浠ｅ彿锛屽鑷村畨瑁呰繃绋嬩腑鏃犳硶鎵惧埌姝ｇ‘鐨勮蒋浠跺寘锛屽畨瑁呭け璐?    [ ! -f "/usr/bin/apt-get" ] && return 0
+	#2026-3-12日更新
+	# 作用：检查Debian/Ubuntu系统源配置，自动替换过旧的版本代号为当前系统版本的正确代号，保持较新版本代号不变，避免引入不兼容的软件包
+	# 场景：用户系统升级后，sources.list中仍然保留了旧版本的代号，导致安装过程中无法找到正确的软件包，安装失败
+    [ ! -f "/usr/bin/apt-get" ] && return 0
     [ ! -f "/etc/os-release" ] && return 0
     
     . /etc/os-release
     
-    # 鍙鐞咲ebian鍜孶buntu
+    # 只处理Debian和Ubuntu
     if [ "${ID}" != "debian" ] && [ "${ID}" != "ubuntu" ]; then
         return 0
     fi
     echo "=================================================="
-    echo "妫€鏌?{ID}绯荤粺婧愰厤缃?.."
+    echo "检查${ID}系统源配置..."
     
-    # 瀹氫箟鐗堟湰浠ｅ彿鏄犲皠锛堟寜鐗堟湰椤哄簭锛?    local correct_codename=""
+    # 定义版本代号映射（按版本顺序）
+    local correct_codename=""
     local version_order=""
     local version_index=0
     
@@ -476,7 +486,7 @@ Check_And_Fix_Debian_Ubuntu_Source(){
             12) correct_codename="bookworm"; version_index=12 ;;
             13) correct_codename="trixie"; version_index=13 ;;
         esac
-        # 瀹氫箟鐗堟湰椤哄簭鏄犲皠 (codename:version_number)
+        # 定义版本顺序映射 (codename:version_number)
         declare -A debian_versions=(
             # ["jessie"]=8
             # ["stretch"]=9
@@ -493,7 +503,7 @@ Check_And_Fix_Debian_Ubuntu_Source(){
             22.04) correct_codename="jammy"; version_index=2204 ;;
             24.04) correct_codename="noble"; version_index=2404 ;;
         esac
-        # 瀹氫箟鐗堟湰椤哄簭鏄犲皠
+        # 定义版本顺序映射
         declare -A ubuntu_versions=(
             # ["trusty"]=1404
             # ["xenial"]=1604
@@ -505,35 +515,36 @@ Check_And_Fix_Debian_Ubuntu_Source(){
     fi
     
     if [ -z "${correct_codename}" ]; then
-        echo "鏈瘑鍒殑${ID}鐗堟湰: ${VERSION_ID}"
+        echo "未识别的${ID}版本: ${VERSION_ID}"
         return 0
     fi
     
-    echo "褰撳墠绯荤粺: ${ID} ${VERSION_ID} -> 姝ｇ‘: ${correct_codename}"
+    echo "当前系统: ${ID} ${VERSION_ID} -> 正确: ${correct_codename}"
     
-    # 妫€鏌ources.list
+    # 检查sources.list
     sources_file="/etc/apt/sources.list"
     if [ ! -f "${sources_file}" ]; then
-        echo "婧愭枃浠?${sources_file} 涓嶅瓨鍦紝璺宠繃妫€鏌?
+        echo "源文件 ${sources_file} 不存在，跳过检查"
         return 0
     fi
     
-    # 鏀堕泦闇€瑕佹浛鎹㈢殑鏃т唬鍙?    need_fix=0
+    # 收集需要替换的旧代号
+    need_fix=0
     old_codenames=""
     
     if [ "${ID}" = "debian" ]; then
         for codename in "${!debian_versions[@]}"; do
             local codename_version=${debian_versions[$codename]}
-            # 鍙鐞嗘瘮褰撳墠鐗堟湰鏃х殑浠ｅ彿
+            # 只处理比当前版本旧的代号
             if [ ${codename_version} -lt ${version_index} ]; then
                 if grep -q "[[:space:]]${codename}[[:space:]]" "${sources_file}" 2>/dev/null; then
-                    echo "鍙戠幇鏃х増鏈唬鍙? ${codename} (鐗堟湰${codename_version} < 褰撳墠${version_index})"
+                    echo "发现旧版本代号: ${codename} (版本${codename_version} < 当前${version_index})"
                     old_codenames="${old_codenames} ${codename}"
                     need_fix=1
                 fi
             elif [ ${codename_version} -gt ${version_index} ] && [ ${codename_version} -lt 99 ]; then
                 if grep -q "[[:space:]]${codename}[[:space:]]" "${sources_file}" 2>/dev/null; then
-                    echo "妫€娴嬪埌杈冩柊鐗堟湰浠ｅ彿: ${codename} (鐗堟湰${codename_version} > 褰撳墠${version_index})锛岃烦杩囨浛鎹?
+                    echo "检测到较新版本代号: ${codename} (版本${codename_version} > 当前${version_index})，跳过替换"
                 fi
             fi
         done
@@ -541,49 +552,52 @@ Check_And_Fix_Debian_Ubuntu_Source(){
     elif [ "${ID}" = "ubuntu" ]; then
         for codename in "${!ubuntu_versions[@]}"; do
             local codename_version=${ubuntu_versions[$codename]}
-            # 鍙鐞嗘瘮褰撳墠鐗堟湰鏃х殑浠ｅ彿
+            # 只处理比当前版本旧的代号
             if [ ${codename_version} -lt ${version_index} ]; then
                 if grep -q "[[:space:]]${codename}[[:space:]]" "${sources_file}" 2>/dev/null; then
-                    echo "鍙戠幇鏃х増鏈唬鍙? ${codename} (鐗堟湰${codename_version} < 褰撳墠${version_index})"
+                    echo "发现旧版本代号: ${codename} (版本${codename_version} < 当前${version_index})"
                     old_codenames="${old_codenames} ${codename}"
                     need_fix=1
                 fi
             elif [ ${codename_version} -gt ${version_index} ]; then
                 if grep -q "[[:space:]]${codename}[[:space:]]" "${sources_file}" 2>/dev/null; then
-                    echo "妫€娴嬪埌杈冩柊鐗堟湰浠ｅ彿: ${codename} (鐗堟湰${codename_version} > 褰撳墠${version_index})锛岃烦杩囨浛鎹?
+                    echo "检测到较新版本代号: ${codename} (版本${codename_version} > 当前${version_index})，跳过替换"
                 fi
             fi
         done
     fi
     
     if [ ${need_fix} -eq 0 ]; then
-        #echo "绯荤粺婧愰厤缃纭紝鏃犻渶淇"
+        #echo "系统源配置正确，无需修复"
         return 0
     fi
     
-    # 澶囦唤骞朵慨澶?    echo "=================================================="
-    echo "妫€娴嬪埌绯荤粺婧愰厤缃娇鐢ㄤ簡鏃х殑鐗堟湰鏈嶅姟鍣ㄤ唬鍙凤紒"
-    echo "褰撳墠绯荤粺: ${ID} ${VERSION_ID} 搴斾娇鐢ㄦ湇鍔″櫒浠ｅ彿: ${correct_codename}"
-    echo "姝ｅ湪鑷姩淇鏃х増鏈湇鍔″櫒浠ｅ彿..."
+    # 备份并修复
+    echo "=================================================="
+    echo "检测到系统源配置使用了旧的版本服务器代号！"
+    echo "当前系统: ${ID} ${VERSION_ID} 应使用服务器代号: ${correct_codename}"
+    echo "正在自动修复旧版本服务器代号..."
     echo "=================================================="
     
-    # 澶囦唤鍘熸枃浠?    backup_file="${sources_file}.bak.$(date +%Y%m%d_%H%M%S)"
+    # 备份原文件
+    backup_file="${sources_file}.bak.$(date +%Y%m%d_%H%M%S)"
     \cp -p "${sources_file}" "${backup_file}"
-    echo "宸插浠藉埌: ${backup_file}"
+    echo "已备份到: ${backup_file}"
     
-    # 鍙浛鎹㈡棫鐗堟湰鐨勪唬鍙?    for wrong_codename in ${old_codenames}; do
+    # 只替换旧版本的代号
+    for wrong_codename in ${old_codenames}; do
         sed -ri "/^[[:space:]]*(deb|deb-src) / s/${wrong_codename}/${correct_codename}/g" "${sources_file}"
-        echo "宸叉浛鎹? ${wrong_codename} -> ${correct_codename}"
+        echo "已替换: ${wrong_codename} -> ${correct_codename}"
     done
     
-    echo "婧愰厤缃凡淇锛屾洿鏂拌蒋浠跺寘鍒楄〃..."
+    echo "源配置已修复，更新软件包列表..."
     apt-get update -y 2>&1 | head -n 20
     
     if [ $? -eq 0 ]; then
-        echo "婧愭洿鏂版垚鍔燂紒"
+        echo "源更新成功！"
     else
-        echo "璀﹀憡: apt-get update 鎵ц澶辫触锛屽彲鑳介渶瑕佹墜鍔ㄦ鏌?
-        echo "濡傞渶鍥炴粴锛屽浠芥枃浠跺湪: ${backup_file}"
+        echo "警告: apt-get update 执行失败，可能需要手动检查"
+        echo "如需回滚，备份文件在: ${backup_file}"
     fi
     
     return 0
@@ -684,7 +698,7 @@ Auto_Swap()
 	if [ ! -d /www ];then
 		mkdir /www
 	fi
-	echo "姝ｅ湪璁剧疆铏氭嫙鍐呭瓨锛岃绋嶇瓑..........";
+	echo "正在设置虚拟内存，请稍等..........";
 	echo '---------------------------------------------';
 	swapFile="/www/swap"
 	dd if=/dev/zero of=$swapFile bs=1M count=1025
@@ -982,7 +996,7 @@ Install_RPM_Pack(){
 	#	curl -Ss --connect-timeout 3 -m 60 http://download.bt.cn/install/yumRepo_select.sh|bash
 	#fi
 	
-	#灏濊瘯鍚屾鏃堕棿(浠巄t.cn)
+	#尝试同步时间(从bt.cn)
 	echo 'Synchronizing system time...'
 	getBtTime=$(curl -sS --connect-timeout 3 -m 60 https://www.bt.cn/api/index/get_time)
 	if [ "${getBtTime}" ];then	
@@ -994,7 +1008,7 @@ Install_RPM_Pack(){
 		rm -rf /etc/localtime
 		ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
-		#灏濊瘯鍚屾鍥介檯鏃堕棿(浠巒tp鏈嶅姟鍣?
+		#尝试同步国际时间(从ntp服务器)
 		ntpdate 0.asia.pool.ntp.org
 		setenforce 0
 	fi
@@ -1289,7 +1303,7 @@ EOF
 	mkdir -p $pyenv_path
 	echo "True" > /www/disk.pl
 	if [ ! -w /www/disk.pl ];then
-		Red_Error "ERROR: Install python env fielded." "ERROR: /www鐩綍鏃犳硶鍐欏叆锛岃妫€鏌ョ洰褰?鐢ㄦ埛/纾佺洏鏉冮檺锛?
+		Red_Error "ERROR: Install python env fielded." "ERROR: /www目录无法写入，请检查目录/用户/磁盘权限！"
 	fi
 	os_type='el'
 	os_version='7'
@@ -1307,7 +1321,7 @@ EOF
 		rm -f /www/server/panel/pymake.pl
 	fi	
 	echo "==============================================="
-	echo "姝ｅ湪涓嬭浇闈㈡澘杩愯鐜锛岃绋嶇瓑..............."
+	echo "正在下载面板运行环境，请稍等..............."
 	echo "==============================================="
 	if [ "${os_version}" != "" ];then
 		pyenv_file="/www/pyenv.tar.gz"
@@ -1327,7 +1341,7 @@ EOF
 			chmod -R 700 $pyenv_path/pyenv/bin
 			if [ ! -f $pyenv_path/pyenv/bin/python ];then
 				rm -f $pyenv_file
-				Red_Error "ERROR: Install python env fielded." "ERROR: 涓嬭浇瀹濆杩愯鐜澶辫触锛岃灏濊瘯閲嶆柊瀹夎锛? 
+				Red_Error "ERROR: Install python env fielded." "ERROR: 下载宝塔运行环境失败，请尝试重新安装！" 
 			fi
 			$pyenv_path/pyenv/bin/python3.7 -V
 			if [ $? -eq 0 ];then
@@ -1350,7 +1364,7 @@ EOF
 	tmp_size=$(du -b $python_src|awk '{print $1}')
 	if [ $tmp_size -lt 10703460 ];then
 		rm -f $python_src
-		Red_Error "ERROR: Download python source code fielded." "ERROR: 涓嬭浇瀹濆杩愯鐜澶辫触锛岃灏濊瘯閲嶆柊瀹夎锛?
+		Red_Error "ERROR: Download python source code fielded." "ERROR: 下载宝塔运行环境失败，请尝试重新安装！"
 	fi
 	tar xvf $python_src
 	rm -f $python_src
@@ -1360,7 +1374,7 @@ EOF
 	make install
 	if [ ! -f $pyenv_path/pyenv/bin/python3.7 ];then
 		rm -rf $python_src_path
-		Red_Error "ERROR: Make python env fielded." "ERROR: 缂栬瘧瀹濆杩愯鐜澶辫触锛?
+		Red_Error "ERROR: Make python env fielded." "ERROR: 编译宝塔运行环境失败！"
 	fi
 	cd ~
 	rm -rf $python_src_path
@@ -1377,7 +1391,7 @@ EOF
 	$pyenv_path/pyenv/bin/pip install -r $pyenv_path/pyenv/pip.txt
 
 	wget -O pip-packs.txt $download_Url/install/pyenv/pip-packs.txt
-	echo "姝ｅ湪鍚庡彴瀹夎pip渚濊禆璇风◢绛?........."
+	echo "正在后台安装pip依赖请稍等.........."
 	PIP_PACKS=$(cat pip-packs.txt)
 	for P_PACK in ${PIP_PACKS};
 	do
@@ -1430,7 +1444,7 @@ Install_Bt(){
 	wget -O /etc/init.d/bt ${download_Url}/install/src/bt6.init -T 15
 	wget -O /www/server/panel/install/public.sh ${Btapi_Url}/install/public.sh -T 15
 	echo "=============================================="
-	echo "姝ｅ湪涓嬭浇闈㈡澘鏂囦欢,璇风◢绛?.................."
+	echo "正在下载面板文件,请稍等..................."
 	echo "=============================================="
 	wget -O panel.zip ${Btapi_Url}/install/src/panel6.zip -T 15
 
@@ -1501,7 +1515,7 @@ Install_Bt(){
 
 	if [ ! -f ${setup_path}/server/panel/tools.py ] || [ ! -f ${setup_path}/server/panel/BT-Panel ];then
 		ls -lh panel.zip
-		Red_Error "ERROR: Failed to download, please try install again!" "ERROR: 涓嬭浇瀹濆澶辫触锛岃灏濊瘯閲嶆柊瀹夎锛?
+		Red_Error "ERROR: Failed to download, please try install again!" "ERROR: 下载宝塔失败，请尝试重新安装！"
 	fi
     
     SYS_LOG_CHECK=$(grep ^weekly /etc/logrotate.conf)
@@ -1613,7 +1627,7 @@ Set_Bt_Panel(){
         	btpip install -I pyOpenSSl 2>/dev/null
     	fi
     	# echo "========================================"
-    	# echo "姝ｅ湪寮€鍚潰鏉縎SL锛岃绋嶇瓑............ "
+    	# echo "正在开启面板SSL，请稍等............ "
     	# echo "========================================"
 		CERT_FILE="/www/server/panel/ssl/certificate.pem"
 		echo -n " -4 " > /www/server/panel/data/v4.pl
@@ -1625,7 +1639,7 @@ Set_Bt_Panel(){
 		else
 			echo -n "True" > /www/server/panel/data/ssl.pl
 		fi
-    	# echo "璇佷功寮€鍚垚鍔燂紒"
+    	# echo "证书开启成功！"
     	# echo "========================================"
     fi
 # 	btpip install Flask-SQLAlchemy==2.5.1 SQLAlchemy==1.3.24
@@ -1660,7 +1674,7 @@ Set_Bt_Panel(){
 				ls -la /www/server/panel/pyenv/lib/python3.7/encodings*|grep utf|grep 8
 			fi
 			# btpython /www/server/panel/BT-Panel
-			Red_Error "ERROR: The BT-Panel service startup failed." "ERROR: 瀹濆鍚姩澶辫触"
+			Red_Error "ERROR: The BT-Panel service startup failed." "ERROR: 宝塔启动失败"
 		fi
 	fi
 
@@ -1836,7 +1850,7 @@ Start_Ip_Cert_Async(){
              acme_connect_url="https://acme-v02.api.letsencrypt.org"
              acme_http_code=$(curl -sS --connect-timeout 2 -m 60 -o /dev/null -w "%{http_code}" "$acme_connect_url")
              if [ "$acme_http_code" == "200" ];then
-                echo "姝ｅ湪鍚庡彴寮€鍚彈淇′换瀹濆闈㈡澘ip璇佷功..."
+                echo "正在后台开启受信任宝塔面板ip证书..."
                 (
                     timeout 60 $pyenv_path/pyenv/bin/python3.7 /www/server/panel/script/auto_apply_ip_ssl.py -ips ${ipv4_address} -path /www/server/panel/ssl > /tmp/auto_apply_ip_ssl.log 2>&1
                     echo $? > /tmp/ip_ssl_exit_code.pl
@@ -1853,16 +1867,16 @@ Check_Ip_Cert_Async(){
 	fi
     if [ -z "$IP_SSL_PID" ]; then
 		if [ "$acme_http_code" != "200" ];then
-			echo "鍙椾俊ip璇佷功鐢宠澶辫触锛宔xit code=$acme_http_code"
-			echo "杞负浣跨敤榛樿鑷璇佷功锛屽悗缁彲鎵嬪姩鍦ㄩ潰鏉胯缃腑閲嶆柊浣跨敤Let's encrypt鐢宠ip璇佷功"
+			echo "受信ip证书申请失败，exit code=$acme_http_code"
+			echo "转为使用默认自签证书，后续可手动在面板设置中重新使用Let's encrypt申请ip证书"
 			return
 		fi
-		echo "鍙椾俊瀹濆闈㈡澘ip璇佷功寮€鍚垚鍔?
+		echo "受信宝塔面板ip证书开启成功"
         /etc/init.d/bt restart
         return
     fi
 
-	echo "姝ｅ湪妫€鏌ュ彈淇″疂濉旈潰鏉縤p璇佷功寮€鍚姸鎬?.."
+	echo "正在检查受信宝塔面板ip证书开启状态..."
     wait $IP_SSL_PID
     
     if [ -f "/tmp/ip_ssl_exit_code.pl" ]; then
@@ -1873,14 +1887,14 @@ Check_Ip_Cert_Async(){
     fi
 
     if [ $rc -eq 0 ]; then
-        echo "鍙椾俊瀹濆闈㈡澘ip璇佷功寮€鍚垚鍔?
+        echo "受信宝塔面板ip证书开启成功"
         /etc/init.d/bt restart
     elif [ $rc -eq 124 ]; then
-        echo "鍙椾俊ip璇佷功鐢宠瓒呮椂锛?0绉掞級"
-        echo "杞负浣跨敤榛樿鑷璇佷功锛屽悗缁彲鎵嬪姩鍦ㄩ潰鏉胯缃腑閲嶆柊浣跨敤Let's encrypt鐢宠ip璇佷功"
+        echo "受信ip证书申请超时（60秒）"
+        echo "转为使用默认自签证书，后续可手动在面板设置中重新使用Let's encrypt申请ip证书"
     else
-        echo "鍙椾俊ip璇佷功鐢宠澶辫触锛宔xit code=$rc"
-        echo "杞负浣跨敤榛樿鑷璇佷功锛屽悗缁彲鎵嬪姩鍦ㄩ潰鏉胯缃腑閲嶆柊浣跨敤Let's encrypt鐢宠ip璇佷功"
+        echo "受信ip证书申请失败，exit code=$rc"
+        echo "转为使用默认自签证书，后续可手动在面板设置中重新使用Let's encrypt申请ip证书"
     fi
 }
 Install_Main(){
@@ -1926,11 +1940,12 @@ echo "
 +----------------------------------------------------------------------
 | Bt-WebPanel FOR CentOS/Ubuntu/Debian
 +----------------------------------------------------------------------
-| Copyright 漏 2015-2099 BT-SOFT(http://www.bt.cn) All rights reserved.
+| Copyright © 2015-2099 BT-SOFT(http://www.bt.cn) All rights reserved.
 +----------------------------------------------------------------------
 | The WebPanel URL will be http://SERVER_IP:${panelPort} when installed.
 +----------------------------------------------------------------------
-| 涓轰簡鎮ㄧ殑姝ｅ父浣跨敤锛岃纭繚浣跨敤鍏ㄦ柊鎴栫函鍑€鐨勭郴缁熷畨瑁呭疂濉旈潰鏉匡紝涓嶆敮鎸佸凡閮ㄧ讲椤圭洰/鐜鐨勭郴缁熷畨瑁?+----------------------------------------------------------------------
+| 为了您的正常使用，请确保使用全新或纯净的系统安装宝塔面板，不支持已部署项目/环境的系统安装
++----------------------------------------------------------------------
 "
 
 
@@ -1978,17 +1993,17 @@ if [ -f "/www/server/panel/BT-Panel" ];then
 	AAPANEL_CHECK=$(grep www.aapanel.com /www/server/panel/BT-Panel)
 	if [ "${AAPANEL_CHECK}" ];then
 		echo -e "----------------------------------------------------"
-		echo -e "妫€鏌ュ凡瀹夎鏈塧apanel锛屾棤娉曡繘琛岃鐩栧畨瑁呭疂濉旈潰鏉?
-		echo -e "濡傜户缁墽琛屽畨瑁呭皢绉诲幓aapanel闈㈡澘鏁版嵁锛堝浠借嚦/www/server/aapanel璺緞锛?鍏ㄦ柊瀹夎瀹濆闈㈡澘"
+		echo -e "检查已安装有aapanel，无法进行覆盖安装宝塔面板"
+		echo -e "如继续执行安装将移去aapanel面板数据（备份至/www/server/aapanel路径） 全新安装宝塔面板"
 		echo -e "aapanel is alreday installed,Can't install panel"
 		echo -e "is install Baota panel,  aapanel data will be removed (backed up to /www/server/aapanel)"
 		echo -e "Beginning new Baota panel installation."
 		echo -e "----------------------------------------------------"
-		echo -e "宸茬煡椋庨櫓/Enter yes to force installation"
-		read -p "杈撳叆yes寮€濮嬪畨瑁? " yes;
+		echo -e "已知风险/Enter yes to force installation"
+		read -p "输入yes开始安装: " yes;
 		if [ "$yes" != "yes" ];then
 			echo -e "------------"
-			echo "鍙栨秷瀹夎"
+			echo "取消安装"
 			exit;
 		fi
 		bt stop
@@ -2013,28 +2028,28 @@ else
 	HTTP_S="http"
 fi 
 
-echo "瀹夎鍩虹缃戠珯娴侀噺缁熻绋嬪簭..."
+echo "安装基础网站流量统计程序..."
 wget -O site_new_total.sh ${download_Url}/site_total/install.sh &> /dev/null 
 bash site_new_total.sh &> /dev/null
 rm -f site_new_total.sh
-echo "瀹夎鍩虹缃戠珯娴侀噺缁熻绋嬪簭瀹屾垚"
+echo "安装基础网站流量统计程序完成"
 
 echo > /www/server/panel/data/bind.pl
 echo -e "=================================================================="
 echo -e "\033[32mCongratulations! Installed successfully!\033[0m"
-echo -e "========================闈㈡澘璐︽埛鐧诲綍淇℃伅=========================="
+echo -e "========================面板账户登录信息=========================="
 echo -e ""
-echo -e " 銆愪簯鏈嶅姟鍣ㄣ€戣鍦ㄥ畨鍏ㄧ粍鏀捐 $panelPort 绔彛"
+echo -e " 【云服务器】请在安全组放行 $panelPort 端口"
 if [ -z "${ipv4_address}" ] && [ -z "${ipv6_address}" ];then
-    echo -e " 澶栫綉闈㈡澘鍦板潃:      ${HTTP_S}://SERVER_IP:${panelPort}${auth_path}"
+    echo -e " 外网面板地址:      ${HTTP_S}://SERVER_IP:${panelPort}${auth_path}"
 fi
 if [ "${ipv4_address}" ];then
-    echo -e " 澶栫綉ipv4闈㈡澘鍦板潃: ${HTTP_S}://${ipv4_address}:${panelPort}${auth_path}"
+    echo -e " 外网ipv4面板地址: ${HTTP_S}://${ipv4_address}:${panelPort}${auth_path}"
 fi
 if [ "${ipv6_address}" ];then
-    echo -e " 澶栫綉ipv6闈㈡澘鍦板潃: ${HTTP_S}://${ipv6_address}:${panelPort}${auth_path}"
+    echo -e " 外网ipv6面板地址: ${HTTP_S}://${ipv6_address}:${panelPort}${auth_path}"
 fi
-echo -e " 鍐呯綉闈㈡澘鍦板潃:     ${HTTP_S}://${LOCAL_IP}:${panelPort}${auth_path}"
+echo -e " 内网面板地址:     ${HTTP_S}://${LOCAL_IP}:${panelPort}${auth_path}"
 echo -e " username: $username"
 echo -e " password: $password"
 echo -e ""
