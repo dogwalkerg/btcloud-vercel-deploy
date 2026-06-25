@@ -1,43 +1,145 @@
 <!DOCTYPE html>
-<html lang="zh-cn">
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="renderer" content="webkit">
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
 <title>宝塔面板安装脚本</title>
-<link href="/static/css/bootstrap-3.4.1.min.css" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/sanren.css">
+<link rel="stylesheet" href="/static/css/style.css">
+<link rel="stylesheet" href="/static/css/download.css">
 <style>
-body{background:#f5f7fa}
-.hero{background:linear-gradient(135deg,#4387fd,#2b6ee8);color:#fff;padding:50px 0;text-align:center}
-.hero h1{font-size:32px;margin:0 0 10px}
-.hero p{font-size:16px;opacity:.9;margin:0}
-.card{background:#fff;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.08);margin-bottom:20px;overflow:hidden}
-.card-hd{background:#fafbfc;border-bottom:1px solid #eee;padding:15px 20px;font-size:16px;font-weight:700}
-.card-bd{padding:20px}
-.code-box{background:#1e1e1e;color:#fff;padding:15px;border-radius:6px;font-family:monospace;font-size:14px;overflow-x:auto;margin-bottom:15px;position:relative}
-.code-box .cmd{white-space:nowrap}
-.lb{display:inline-block;background:#e8ecf1;color:#555;padding:2px 10px;border-radius:4px;font-size:13px;margin-bottom:8px}
-.tip{color:orangered;font-weight:700}
+.d1{background:linear-gradient(0deg,#fff,#d8efdb,#edf7ef);position:relative;min-height:100vh}
+.d1 .wrap{padding-top:20px;position:relative;z-index:1}
+.down-main .d1 .i1t{padding-top:30px}
+.textcenter h1{font-size:36px;color:#333;font-weight:700;margin-bottom:5px}
+.textcenter .cl8{font-size:16px;color:#666;line-height:1.8}
+.install-list{display:flex;flex-wrap:wrap;justify-content:center;gap:20px;margin-top:40px;padding:0 15px}
+.install-box{display:flex;align-items:center;width:30%;min-width:280px;padding:30px 10px 16px 20px;border-radius:8px;background:#fff;box-shadow:0 4px 8px rgba(0,0,0,.3);transition:all .3s;position:relative;overflow:hidden;cursor:default}
+.install-box:hover{box-shadow:0 6px 16px rgba(0,0,0,.5);top:-10px}
+.install-box::before{content:'';position:absolute;top:20px;right:0;bottom:0;width:100%;background-repeat:no-repeat;background-position:right bottom;background-size:auto 100%;z-index:0;opacity:.3;pointer-events:none}
+.install-box.linux::before{background-image:url(/static/images/downico1_01.png)}
+.install-box.monitor::before{background-image:url(/static/images/downico2_01.png)}
+.install-box.aapanel::before{background-image:url(/static/images/downico1_01.png)}
+.install-box .img{flex:0 0 auto;width:80px;height:80px;margin-right:15px;position:relative;z-index:1}
+.install-box .img img{width:100%;height:auto}
+.install-box .cont{flex:1;position:relative;z-index:1}
+.install-box .cont .title{font-size:20px;font-weight:700;color:#333}
+.install-box .cont .desc{font-size:13px;color:#888;margin-top:5px;line-height:1.6}
+.install-box .cont .mark{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.install-box .cont .mark span{background:#e8f5e9;color:#20a53a;font-size:12px;padding:2px 8px;border-radius:4px}
+.d2 .wrap{padding:40px 15px}
+.d2 .wrap-title{font-size:24px;font-weight:700;color:#333;margin-bottom:10px}
+.d2 .wrap-title .text{color:#20a53a}
+.d2 .desc{font-size:14px;color:#666;line-height:1.8;margin-bottom:20px}
+.d2 .desc a{color:#20a53a;font-weight:600}
+.d2 .install-code{background:#1e1e1e;color:#fff;padding:15px;border-radius:6px;font-family:monospace;font-size:14px;position:relative;overflow-x:auto;margin-bottom:15px;border:1px solid #333}
+.d2 .install-code .command{white-space:nowrap;user-select:all;font-size:13px}
+.d2 .install-code .ico-copy{position:absolute;top:8px;right:8px;background:rgba(255,255,255,.15);color:#fff;border:none;padding:5px 14px;border-radius:4px;cursor:pointer;font-size:12px;transition:.2s}
+.d2 .install-code .ico-copy:hover{background:rgba(255,255,255,.3)}
+.d2 .install-code .osname{display:block;color:#888;font-size:12px;margin-bottom:5px;font-family:sans-serif}
+.d2 .tips{color:orangered;font-weight:700;font-size:13px;line-height:1.8;padding:15px;background:#fff8f0;border-radius:6px;margin-top:10px}
+@media(max-width:768px){.textcenter h1{font-size:28px}.install-box{width:100%;min-width:unset;padding:20px 10px 12px 15px}.install-box .img{width:64px;height:64px}}
 </style>
 </head>
 <body>
-<div class="hero"><h1>宝塔面板安装脚本</h1><p>2分钟装好面板，一键管理服务器</p></div>
-<div class="container" style="padding-top:30px;padding-bottom:40px">
-<!-- Linux -->
-<div class="card"><div class="card-hd">Linux面板 11.8.0</div><div class="card-bd"><p>使用SSH连接服务器后执行：</p>
-<div class="code-box"><span class="lb">CentOS</span><div class="cmd">yum install -y wget && wget -O install.sh https://YOUR_DOMAIN.vercel.app/install/install_panel.sh && sh install.sh</div></div>
-<div class="code-box"><span class="lb">Ubuntu/Debian</span><div class="cmd">wget -O install.sh https://YOUR_DOMAIN.vercel.app/install/install_panel.sh && bash install.sh</div></div>
-<div class="code-box"><span class="lb">一键更新</span><div class="cmd">curl https://YOUR_DOMAIN.vercel.app/install/update6.sh|bash</div></div>
-<p class="tip">注意：必须为没装过其它环境的新系统</p></div></div>
-<!-- Win -->
-<div class="card"><div class="card-hd">Windows面板 8.5.2</div><div class="card-bd"><p>1、使用官方安装程序安装，安装完先不要进入面板。</p><p>2、在cmd执行以下命令：</p><div class="code-box"><div class="cmd">wget https://YOUR_DOMAIN.vercel.app/win/install/panel_update.py -O C:/update.py && "C:\Program Files\python\python.exe" C:/update.py 8.5.2</div></div><p>3、打开面板后绑定账号时输入任意账号密码即可。</p></div></div>
-<!-- aaPanel -->
-<div class="card"><div class="card-hd">aaPanel 7.0.25</div><div class="card-bd">
-<div class="code-box"><span class="lb">Install</span><div class="cmd">URL=https://YOUR_DOMAIN.vercel.app/install/install_7.0_en.sh && if [ -f /usr/bin/curl ];then curl -ksSO $URL ;else wget -O install_7.0_en.sh $URL;fi;bash install_7.0_en.sh</div></div>
-<div class="code-box"><span class="lb">Upgrade</span><div class="cmd">curl https://YOUR_DOMAIN.vercel.app/install/update_7.x_en.sh|bash</div></div></div></div>
-<!-- Monitor -->
-<div class="card"><div class="card-hd">云安全监控 2.3.3</div><div class="card-bd">
-<div class="code-box"><span class="lb">安装</span><div class="cmd">curl -sS https://YOUR_DOMAIN.vercel.app/install/install_btmonitor.sh -o /tmp/install_btmonitor.sh && bash /tmp/install_btmonitor.sh</div></div>
-<div class="code-box"><span class="lb">更新</span><div class="cmd">curl https://YOUR_DOMAIN.vercel.app/install/update_btmonitor.sh|bash</div></div></div></div>
+<div class="down-main">
+<div class="d1">
+<div class="wrap">
+<div class="i1t textcenter">
+  <h1><img style="width:36px;vertical-align:-4px;margin-right:8px" src="/static/images/logo.svg" alt="">宝塔开心版</h1>
+  <div class="text20 mt_25 wap_mt15 textcenter cl8">
+    <p>全球超过1500万台服务器安装使用宝塔，持续更新维护5年值得信赖</p>
+  </div>
+  <div class="install-list">
+    <!-- Linux面板 -->
+    <div class="install-box linux">
+      <div class="img"><img src="/static/images/downico1_01.png"></div>
+      <div class="cont">
+        <div class="title">Linux面板 11.8.0</div>
+        <div class="desc">支持Ubuntu、Debian、Centos、Fedora、麒麟、统信UOS等全部Linux系统</div>
+        <div class="mark"><span>2分钟装好</span><span>阿里云推荐</span></div>
+      </div>
+    </div>
+    <!-- 云安全监控 -->
+    <div class="install-box monitor">
+      <div class="img"><img src="/static/images/downico2_01.png"></div>
+      <div class="cont">
+        <div class="title">宝塔云安全监控</div>
+        <div class="desc">多机跨平台安全管理和监控</div>
+        <div class="mark"><span>操作简单</span><span>使用方便</span></div>
+      </div>
+    </div>
+    <!-- aaPanel -->
+    <div class="install-box aapanel">
+      <div class="img"><img src="/static/images/aapanel.png" style="width:72px"></div>
+      <div class="cont">
+        <div class="title">aaPanel Pro edition 7.0.25</div>
+        <div class="desc">BT-Panel International Edition<br>Easy to operate Convenient to use</div>
+      </div>
+    </div>
+  </div>
 </div>
+</div>
+</div>
+
+<div class="d2" id="instal-linux">
+<div class="wrap">
+<div class="wrap-title"><div class="text" id="install_linux_panel">宝塔面板11.8.0安装脚本 <i class="fas fa-fire-alt fa-shake" style="color:red;display:none"></i></div></div>
+<div class="desc">
+使用SSH远程终端工具连接到服务器（大约2分钟完成安装宝塔面板）：
+</div>
+<div class="install-code">
+  <span class="osname">通用/万能安装脚本</span>
+  <div class="command" title="点击复制安装命令">if [ -f /usr/bin/curl ];then curl -sSO https://YOUR_DOMAIN.vercel.app/install/install_panel.sh;else wget -O install_panel.sh https://YOUR_DOMAIN.vercel.app/install/install_panel.sh;fi;bash install_panel.sh</div>
+  <span class="ico-copy" data-clipboard-text="if [ -f /usr/bin/curl ];then curl -sSO https://YOUR_DOMAIN.vercel.app/install/install_panel.sh;else wget -O install_panel.sh https://YOUR_DOMAIN.vercel.app/install/install_panel.sh;fi;bash install_panel.sh">复制命令</span>
+</div>
+
+<div class="install-code code_win">
+<span class="osname">CentOS安装脚本</span>
+<div class="command" title="点击复制CentOS安装脚本">yum install -y wget && wget -O install.sh https://YOUR_DOMAIN.vercel.app/install/install_panel.sh && sh install.sh</div>
+<span class="ico-copy" data-clipboard-text="yum install -y wget && wget -O install.sh https://YOUR_DOMAIN.vercel.app/install/install_panel.sh && sh install.sh">复制</span>
+</div>
+
+<div class="install-code code_win">
+<span class="osname">Ubuntu/Debian安装脚本</span>
+<div class="command" title="点击复制Ubuntu/Debian安装脚本">wget -O install.sh https://YOUR_DOMAIN.vercel.app/install/install_panel.sh && bash install.sh</div>
+<span class="ico-copy" data-clipboard-text="wget -O install.sh https://YOUR_DOMAIN.vercel.app/install/install_panel.sh && bash install.sh">复制</span>
+</div>
+
+<div class="install-code code_win">
+<span class="osname">一键更新脚本</span>
+<div class="command" title="点击复制一键更新脚本">curl https://YOUR_DOMAIN.vercel.app/install/update6.sh|bash</div>
+<span class="ico-copy" data-clipboard-text="curl https://YOUR_DOMAIN.vercel.app/install/update6.sh|bash">复制</span>
+</div>
+
+<div class="tips">
+<p>系统兼容性排序：Ubuntu 22 / CentOS 9 / Debian 12 &gt; 麒麟，统信，欧拉等Linux系统；</p>
+<p>8.x版本直接覆盖安装即可升级到最新版本；</p>
+</div>
+</div>
+</div>
+</div>
+
+<div class="foot" style="background:#f5f7fa;padding:30px 0;text-align:center;color:#999;font-size:13px">
+<div class="wrap">
+<div class="fb2">
+<p>Copyright &copy; 2026 宝塔面板安装脚本</p>
+</div>
+</div>
+</div>
+
+<script src="/static/js/jquery-3.7.1.min.js"></script>
+<script src="/static/js/layer/layer.js"></script>
+<script src="/static/js/clipboard-1.7.1.min.js"></script>
+<script>
+$(function(){
+  new Clipboard('.ico-copy',{
+    text:function(e){return $(e).attr('data-clipboard-text')||$(e).prev().text()}
+  }).on('success',function(e){layer.msg(e.trigger.title||'复制成功',{icon:1})})
+  .on('error',function(e){layer.msg('复制失败，请手动复制',{icon:2})});
+  $('.install-code .command').click(function(){$(this).next('.ico-copy').click()});
+});
+</script>
 </body>
 </html>
