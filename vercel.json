@@ -3,20 +3,24 @@
   "cleanUrls": true,
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "/api?path=api/:path*"
+    },
+    {
       "source": "/panel/:path*",
-      "destination": "/api/panel/:path*"
+      "destination": "/api?path=api/panel/:path*"
     },
     {
       "source": "/wpanel/:path*",
-      "destination": "/api/wpanel/:path*"
+      "destination": "/api?path=api/wpanel/:path*"
     },
     {
       "source": "/Auth/:path*",
-      "destination": "/api/Auth/:path*"
+      "destination": "/api?path=api/Auth/:path*"
     },
     {
       "source": "/down/:path*",
-      "destination": "/api/down/:path*"
+      "destination": "/api?path=down/:path*"
     },
     {
       "source": "/install/src/:path*",

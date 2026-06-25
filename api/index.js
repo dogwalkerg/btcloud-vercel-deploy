@@ -15,21 +15,14 @@ function trimSlash(value) {
   return String(value || '').replace(/\/+$/, '');
 }
 
-function getPath(req) {
-  const value = req.query && req.query.path;
-  if (Array.isArray(value)) return value.join('/');
-  return String(value || '');
+function normalizePath(value) {
+  return String(value || '').replace(/^\/+/, '');
 }
 
 function getBody(req) {
   if (!req.body) return undefined;
   if (typeof req.body === 'string' || Buffer.isBuffer(req.body)) return req.body;
   return new URLSearchParams(req.body).toString();
-}
-
-function buildUpstreamPath(path) {
-  if (path.startsWith('down/')) return `/${path}`;
-  return `/api/${path}`;
 }
 
 function appendQuery(url, req) {
@@ -42,18 +35,18 @@ function appendQuery(url, req) {
 }
 
 function fallback(path, res) {
-  if (path === 'SetupCount') return res.status(200).send('ok');
-  if (path === 'panel/get_version') return res.status(200).send('11.8.0');
-  if (path === 'wpanel/get_version') return res.status(200).send('8.5.2');
-  if (path === 'bt_monitor/latest_version') {
+  if (path === 'api/SetupCount') return res.status(200).send('ok');
+  if (path === 'api/panel/get_version') return res.status(200).send('11.8.0');
+  if (path === 'api/wpanel/get_version') return res.status(200).send('8.5.2');
+  if (path === 'api/bt_monitor/latest_version') {
     return res.status(200).json({ version: '2.3.3', description: 'No update log', create_time: '2025-08-12' });
   }
   if (
-    path === 'panel/get_soft_list' ||
-    path === 'panel/get_soft_list_test' ||
-    path === 'panel/get_plugin_list' ||
-    path === 'wpanel/get_soft_list' ||
-    path === 'wpanel/get_soft_list_test'
+    path === 'api/panel/get_soft_list' ||
+    path === 'api/panel/get_soft_list_test' ||
+    path === 'api/panel/get_plugin_list' ||
+    path === 'api/wpanel/get_soft_list' ||
+    path === 'api/wpanel/get_soft_list_test'
   ) {
     return res.status(200).json(EMPTY_PLUGIN_LIST);
   }
@@ -61,14 +54,14 @@ function fallback(path, res) {
 }
 
 module.exports = async (req, res) => {
-  const path = getPath(req);
+  const path = normalizePath((req.query && req.query.path) || '');
   const upstream = trimSlash(process.env.BTCLOUD_UPSTREAM || process.env.BT_CLOUD_UPSTREAM);
   if (!upstream) return fallback(path, res);
 
   try {
     const method = req.method || 'GET';
     const body = method === 'GET' || method === 'HEAD' ? undefined : getBody(req);
-    const upstreamUrl = appendQuery(upstream + buildUpstreamPath(path), req);
+    const upstreamUrl = appendQuery(`${upstream}/${path}`, req);
     const response = await fetch(upstreamUrl, {
       method,
       headers: body ? { 'content-type': 'application/x-www-form-urlencoded' } : undefined,
