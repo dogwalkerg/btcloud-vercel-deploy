@@ -58,6 +58,25 @@ async function proxyJson(req, res, upstreamPath, fallback = EMPTY_PLUGIN_LIST) {
   }
 }
 
+async function proxyPluginList(req, res, upstreamPath, listUrlEnvName) {
+  const listUrl = process.env[listUrlEnvName];
+  if (listUrl) {
+    try {
+      const response = await fetch(listUrl);
+      const text = await response.text();
+      res.status(response.status);
+      res.setHeader('content-type', response.headers.get('content-type') || 'application/json; charset=utf-8');
+      res.send(text);
+      return;
+    } catch (error) {
+      res.status(502).json({ status: false, msg: error.message || 'plugin list request failed' });
+      return;
+    }
+  }
+
+  await proxyJson(req, res, upstreamPath);
+}
+
 function redirectPackage(req, res, options) {
   const query = req.method === 'GET' ? req.query || {} : { ...(req.query || {}), ...(req.body || {}) };
   const name = query.name;
@@ -126,6 +145,7 @@ async function proxyDownload(req, res, upstreamPath) {
 
 module.exports = {
   proxyJson,
+  proxyPluginList,
   proxyDownload,
   redirectPackage,
   redirectOtherFile,
