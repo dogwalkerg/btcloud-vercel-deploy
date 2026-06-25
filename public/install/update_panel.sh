@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 pyenv_bin=/www/server/panel/pyenv/bin
 rep_path=${pyenv_bin}:$PATH
@@ -20,7 +20,7 @@ if [ "${Centos6Check}" ];then
 	exit 1
 fi 
 
-Btapi_Url='https://YOUR_DOMAIN.vercel.app'
+Btapi_Url='https://bt5.cnam.ccwu.cc'
 
 up_plugin=0
 
