@@ -1,4 +1,4 @@
-const { proxyDownload, redirectOtherFile } = require('../_lib/btcloud');
+const { proxyDownload, redirectOtherFile } = require('../../lib/btcloud');
 
 module.exports = async (req, res) => {
   if (redirectOtherFile(req, res, process.env.PLUGIN_OTHER_BASE_URL)) return;

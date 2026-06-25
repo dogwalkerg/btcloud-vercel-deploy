@@ -1,4 +1,4 @@
-const { proxyDownload, redirectPackage } = require('../api/_lib/btcloud');
+const { proxyDownload, redirectPackage } = require('../../lib/btcloud');
 
 module.exports = async (req, res) => {
   const os = ((req.body && req.body.os) || (req.query && req.query.os) || 'Linux').toLowerCase();

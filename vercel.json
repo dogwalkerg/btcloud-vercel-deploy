@@ -13,6 +13,10 @@
     {
       "source": "/Auth/:path*",
       "destination": "/api/Auth/:path*"
+    },
+    {
+      "source": "/down/:path*",
+      "destination": "/api/down/:path*"
     }
   ]
 }
