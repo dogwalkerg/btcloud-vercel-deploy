@@ -1326,10 +1326,13 @@ EOF
 	if [ "${os_version}" != "" ];then
 		pyenv_file="/www/pyenv.tar.gz"
 		#Download_File ${download_Url} ${backup_Url} "/install/pyenv/pyenv-${os_type}${os_version}-x${is64bit}.tar.gz" $pyenv_file
-		wget -O $pyenv_file $download_Url/install/pyenv/pyenv-${os_type}${os_version}-x${is64bit}.tar.gz -T 20
+		pyenv_name=pyenv-${os_type}${os_version}-x${is64bit}.tar.gz
+		fast_pyenv_url="${Btapi_Url}/install/pyenv/${pyenv_name}"
+		echo "Download python env: ${fast_pyenv_url}"
+		wget -O $pyenv_file ${fast_pyenv_url} -T 20
 		if [ "$?" != "0" ];then
 			get_node_url $download_Url
-			wget -O $pyenv_file $download_Url/install/pyenv/pyenv-${os_type}${os_version}-x${is64bit}.tar.gz -T 20
+			wget -O $pyenv_file $download_Url/install/pyenv/${pyenv_name} -T 20
 		fi
 		tmp_size=$(du -b $pyenv_file|awk '{print $1}')
 		if [ $tmp_size -lt 703460 ];then
