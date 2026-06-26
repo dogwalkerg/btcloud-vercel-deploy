@@ -1327,7 +1327,7 @@ EOF
 		pyenv_file="/www/pyenv.tar.gz"
 		#Download_File ${download_Url} ${backup_Url} "/install/pyenv/pyenv-${os_type}${os_version}-x${is64bit}.tar.gz" $pyenv_file
 		pyenv_name=pyenv-${os_type}${os_version}-x${is64bit}.tar.gz
-		fast_pyenv_url="${Btapi_Url}/install/pyenv/${pyenv_name}"
+		fast_pyenv_url="https://sh.osh.ccwu.cc/bt5/public/install/pyenv/${pyenv_name}"
 		echo "Download python env: ${fast_pyenv_url}"
 		wget -O $pyenv_file ${fast_pyenv_url} -T 20
 		if [ "$?" != "0" ];then
@@ -2068,6 +2068,5 @@ if [ "${outTime}" == "0" ];then
 else
 	echo -e "Time consumed:\033[32m $outTime \033[0mMinute!"
 fi
-
 
 
