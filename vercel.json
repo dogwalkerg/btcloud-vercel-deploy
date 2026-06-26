@@ -24,15 +24,15 @@
     },
     {
       "source": "/install/src/:path*",
-      "destination": "https://apibt5.662123.xyz/install/src/:path*"
+      "destination": "https://sh.osh.ccwu.cc/bt5/public/install/src/:path*"
     },
     {
       "source": "/install/update/:path*",
-      "destination": "https://apibt5.662123.xyz/install/update/:path*"
+      "destination": "https://sh.osh.ccwu.cc/bt5/public/install/update/:path*"
     },
     {
       "source": "/win/panel/:path*",
-      "destination": "https://apibt5.662123.xyz/win/panel/:path*"
+      "destination": "https://sh.osh.ccwu.cc/bt5/public/win/panel/:path*"
     }
   ]
 }

@@ -11,6 +11,8 @@ const EMPTY_PLUGIN_LIST = {
   aln: 'AES encrypted string',
 };
 
+const R2_BASE = 'https://sh.osh.ccwu.cc/bt5';
+
 function trimSlash(value) {
   return String(value || '').replace(/\/+$/, '');
 }
@@ -32,6 +34,69 @@ function appendQuery(url, req) {
     if (key !== 'path') target.searchParams.append(key, value);
   });
   return target.toString();
+}
+
+async function sendUrl(req, res, url) {
+  const method = req.method || 'GET';
+  const body = method === 'GET' || method === 'HEAD' ? undefined : getBody(req);
+  const response = await fetch(appendQuery(url, req), {
+    method,
+    headers: body ? { 'content-type': 'application/x-www-form-urlencoded' } : undefined,
+    body,
+  });
+  const buffer = Buffer.from(await response.arrayBuffer());
+  res.status(response.status);
+  response.headers.forEach((value, key) => {
+    const lower = key.toLowerCase();
+    if (lower !== 'content-encoding' && lower !== 'transfer-encoding') {
+      res.setHeader(key, value);
+    }
+  });
+  res.send(buffer);
+}
+
+function redirectTo(res, url) {
+  res.writeHead(302, { Location: url });
+  res.end();
+}
+
+function getParam(req, name) {
+  const value = (req.query && req.query[name]) || (req.body && req.body[name]);
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function handleR2(path, req, res) {
+  if (
+    path === 'api/panel/get_soft_list' ||
+    path === 'api/panel/get_soft_list_test' ||
+    path === 'api/panel/get_plugin_list'
+  ) {
+    return sendUrl(req, res, `${R2_BASE}/data/config/plugin_list.json`);
+  }
+  if (path === 'api/panel/getSoftList' || path === 'api/panel/getSoftListEn') {
+    return sendUrl(req, res, `${R2_BASE}/data/en/config/plugin_list.json`);
+  }
+  if (path === 'api/wpanel/get_soft_list' || path === 'api/wpanel/get_soft_list_test') {
+    return fallback(path, res);
+  }
+  if (path === 'down/download_plugin') {
+    const name = getParam(req, 'name');
+    const version = getParam(req, 'version');
+    const os = String(getParam(req, 'os') || 'Linux').toLowerCase();
+    if (!name || !version) return res.status(400).json({ status: false, msg: 'missing parameters' });
+    if (!/^[a-zA-Z0-9_]+$/.test(name) || !/^[0-9.]+$/.test(version)) {
+      return res.status(400).json({ status: false, msg: 'invalid parameters' });
+    }
+    const prefix = os === 'en' ? 'data/en/plugins/package' : 'data/plugins/package';
+    return redirectTo(res, `${R2_BASE}/${prefix}/${encodeURIComponent(`${name}-${version}.zip`)}`);
+  }
+  if (path === 'api/Pluginother/get_file') {
+    const fname = getParam(req, 'fname') || getParam(req, 'filename');
+    if (!fname || String(fname).includes('..')) return res.status(400).json({ status: false, msg: 'invalid parameters' });
+    const safePath = String(fname).split('/').map(encodeURIComponent).join('/');
+    return redirectTo(res, `${R2_BASE}/data/plugins/other/${safePath}`);
+  }
+  return null;
 }
 
 function fallback(path, res) {
@@ -56,26 +121,15 @@ function fallback(path, res) {
 module.exports = async (req, res) => {
   const path = normalizePath((req.query && req.query.path) || '');
   const upstream = trimSlash(process.env.BTCLOUD_UPSTREAM || process.env.BT_CLOUD_UPSTREAM);
-  if (!upstream) return fallback(path, res);
+  if (!upstream) {
+    const handled = handleR2(path, req, res);
+    if (handled) return handled;
+    return fallback(path, res);
+  }
 
   try {
-    const method = req.method || 'GET';
-    const body = method === 'GET' || method === 'HEAD' ? undefined : getBody(req);
     const upstreamUrl = appendQuery(`${upstream}/${path}`, req);
-    const response = await fetch(upstreamUrl, {
-      method,
-      headers: body ? { 'content-type': 'application/x-www-form-urlencoded' } : undefined,
-      body,
-    });
-    const buffer = Buffer.from(await response.arrayBuffer());
-    res.status(response.status);
-    response.headers.forEach((value, key) => {
-      const lower = key.toLowerCase();
-      if (lower !== 'content-encoding' && lower !== 'transfer-encoding') {
-        res.setHeader(key, value);
-      }
-    });
-    res.send(buffer);
+    await sendUrl(req, res, upstreamUrl);
   } catch (error) {
     res.status(502).json({ status: false, msg: error.message || 'upstream request failed' });
   }
