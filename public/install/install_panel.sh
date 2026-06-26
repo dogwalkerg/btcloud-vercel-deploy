@@ -1449,7 +1449,9 @@ Install_Bt(){
 	echo "=============================================="
 	echo "正在下载面板文件,请稍等..................."
 	echo "=============================================="
-	wget -O panel.zip ${Btapi_Url}/install/src/panel6.zip -T 15
+	fast_panel_url="https://sh.osh.ccwu.cc/bt5/public/install/src/panel6.zip"
+	echo "Download panel package: ${fast_panel_url}"
+	wget -O panel.zip ${fast_panel_url} -T 30
 
 	if [ -f "${setup_path}/server/panel/data/default.db" ];then
 		if [ -d "/${setup_path}/server/panel/old_data" ];then
